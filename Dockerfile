@@ -1,21 +1,26 @@
+# 1) إبدأ من صورة n8n الرسمية
 FROM n8nio/n8n:latest
 
-# 1) انتقل إلى المستخدم root عشان تثبت الأدوات
+# 2) انتقل لروت عشان تثبت بايثون وباقي الأدوات
 USER root
 
-# 2) ثبت بايثون وبايب وباقي الأدوات مع مكتبات Chromium اللازمة
-RUN apk add --no-cache python3 py3-pip bash chromium nss \
+# 3) ثبت Python3، pip، bash، Chromium و Chromedriver
+#    ثم ثبّت مكتبات gspread/oauth2client و selenium و webdriver-manager
+RUN apk add --no-cache \
+      python3 \
+      py3-pip \
+      bash \
+      chromium \
+      chromium-chromedriver \
     && pip3 install \
-         gspread \
-         oauth2client \
-         selenium \
-         webdriver-manager \
-         playwright \
-    && python3 -m playwright install --with-deps
+      gspread \
+      oauth2client \
+      selenium \
+      webdriver-manager
 
-# 3) انسخ السكربت الخاص فينا
+# 4) انسخ السكربت وخلي الصلاحيات خاصة بمستخدم node
 COPY sheet_images.py /home/node/sheet_images.py
 RUN chown node:node /home/node/sheet_images.py
 
-# 4) عدّل للصلاحيات الاعتيادية للمستخدم node
+# 5) عدّل للصلاحيات الاعتيادية
 USER node
