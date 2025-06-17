@@ -1,26 +1,50 @@
-# 1) إبدأ من صورة n8n الرسمية
-FROM n8nio/n8n:latest
+# الصورة الأساسية
+FROM python:3.10-slim
 
-# 2) انتقل لروت عشان تثبت بايثون وباقي الأدوات
-USER root
+# متغيرات البيئة
+ENV PYTHONUNBUFFERED=1 \
+    PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
-# 3) ثبت Python3، pip، bash، Chromium و Chromedriver
-#    ثم ثبّت مكتبات gspread/oauth2client و selenium و webdriver-manager
-RUN apk add --no-cache \
-      python3 \
-      py3-pip \
-      bash \
-      chromium \
-      chromium-chromedriver \
-    && pip3 install \
-      gspread \
-      oauth2client \
-      selenium \
-      webdriver-manager
+# تثبيت تبعيات النظام
+RUN apt-get update && apt-get install -y \
+    curl \
+    gnupg \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
+    libatspi2.0-0 \
+    chromium \
+    && rm -rf /var/lib/apt/lists/*
 
-# 4) انسخ السكربت وخلي الصلاحيات خاصة بمستخدم node
-COPY sheet_images.py /home/node/sheet_images.py
-RUN chown node:node /home/node/sheet_images.py
+# مجلد العمل
+WORKDIR /app
 
-# 5) عدّل للصلاحيات الاعتيادية
-USER node
+# نسخ متطلبات بايثون
+COPY requirements.txt .
+
+# تثبيت المكتبات
+RUN pip install --no-cache-dir -r requirements.txt
+
+# تثبيت متصفحات Playwright
+RUN playwright install chromium
+
+# نسخ ملفات المشروع
+COPY . .
+
+# جعل ملف التشغيل قابل للتنفيذ
+RUN chmod +x entrypoint.sh
+
+# نقطة الدخول
+ENTRYPOINT ["./entrypoint.sh"]
