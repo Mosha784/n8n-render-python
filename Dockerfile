@@ -1,14 +1,26 @@
-FROM n8nio/n8n:latest
+# 1) استخدم صورة Playwright/ Python مبنية على Ubuntu (Debian-based)
+FROM mcr.microsoft.com/playwright/python:v1.39.0-focal
 
-# نصب بايثون وباقي الأدوات
-USER root
-RUN apk add --no-cache python3 py3-pip bash \
-    && pip3 install gspread oauth2client playwright selenium webdriver-manager \
-    && playwright install chromium
+# 2) حدّد مجلّد العمل
+WORKDIR /app
 
-# انسخ السكربت لمجلد المستخدم في الحاوية
-COPY sheet_images.py /home/node/sheet_images.py
-RUN chown node:node /home/node/sheet_images.py
+# 3) انسخ ملف المتطلبات لو عندك one، أو ثبت الحزم يدويًا:
+# إذا عندك requirements.txt فا استخدم:
+# COPY requirements.txt ./
+# RUN pip install --no-cache-dir -r requirements.txt
 
-# عدّل للصلاحيات الافتراضية
-USER node
+# أما إذا ما عندك requirements.txt فتثبت بالشكل التالي:
+RUN pip install --no-cache-dir \
+    gspread \
+    oauth2client \
+    selenium \
+    webdriver-manager
+
+# Playwright متضمّن بالصورة، لكن لازم تثبت المتصفّحات:
+RUN playwright install --with-deps
+
+# 4) انسخ كل السكربتات الموجودة في المجلّد الحالي إلى داخل الصورة
+COPY . .
+
+# 5) حدّد الأمر الافتراضي للتشغيل عند إطلاق الحاوية
+CMD ["python", "sheet_images.py"]
