@@ -1,26 +1,21 @@
-# 1) استخدم صورة Playwright/ Python مبنية على Ubuntu (Debian-based)
-FROM mcr.microsoft.com/playwright/python:v1.39.0-focal
+FROM n8nio/n8n:latest
 
-# 2) حدّد مجلّد العمل
-WORKDIR /app
+# 1) انتقل إلى المستخدم root عشان تثبت الأدوات
+USER root
 
-# 3) انسخ ملف المتطلبات لو عندك one، أو ثبت الحزم يدويًا:
-# إذا عندك requirements.txt فا استخدم:
-# COPY requirements.txt ./
-# RUN pip install --no-cache-dir -r requirements.txt
+# 2) ثبت بايثون وبايب وباقي الأدوات مع مكتبات Chromium اللازمة
+RUN apk add --no-cache python3 py3-pip bash chromium nss \
+    && pip3 install \
+         gspread \
+         oauth2client \
+         selenium \
+         webdriver-manager \
+         playwright \
+    && python3 -m playwright install --with-deps
 
-# أما إذا ما عندك requirements.txt فتثبت بالشكل التالي:
-RUN pip install --no-cache-dir \
-    gspread \
-    oauth2client \
-    selenium \
-    webdriver-manager
+# 3) انسخ السكربت الخاص فينا
+COPY sheet_images.py /home/node/sheet_images.py
+RUN chown node:node /home/node/sheet_images.py
 
-# Playwright متضمّن بالصورة، لكن لازم تثبت المتصفّحات:
-RUN playwright install --with-deps
-
-# 4) انسخ كل السكربتات الموجودة في المجلّد الحالي إلى داخل الصورة
-COPY . .
-
-# 5) حدّد الأمر الافتراضي للتشغيل عند إطلاق الحاوية
-CMD ["python", "sheet_images.py"]
+# 4) عدّل للصلاحيات الاعتيادية للمستخدم node
+USER node
